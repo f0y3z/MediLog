@@ -38,7 +38,7 @@ function PasswordInput({ placeholder, value, onInput }) {
 
   return (
     <div className="field-control">
-      <span className="field-icon">lock</span>
+      <span className="field-icon"></span>
       <input
         type={visible ? "text" : "password"}
         placeholder={placeholder}
@@ -72,10 +72,10 @@ function HeroSlider({ mode }) {
   return (
     <section className="hero-panel" aria-label="HI-MOM welcome images">
       <div className="brand-row">
-        <span className="brand-mark">HM</span>
+        {/* <span className="brand-mark"></span>
         <h1>
           <span>Nurturing</span> <span>New</span> <span>Beginnings</span>
-        </h1>
+        </h1> */}
       </div>
 
       <div className="slide-stage">
@@ -108,9 +108,9 @@ function HeroSlider({ mode }) {
           {mode === "login" ? "Caring for You and Your Baby" : "Start Your Beautiful"}
           <span>{mode === "login" ? " Every Step of the Way" : " Journey Today"}</span>
         </h2>
-        <p>
+        {/* <p>
           Expert maternity care, personalized support, and compassionate guidance for every stage of pregnancy.
-        </p>
+        </p> */}
 
         <div className="feature-strip">
           {features.map((feature) => (
@@ -128,7 +128,7 @@ function HeroSlider({ mode }) {
 function AuthHeader({ title, text }) {
   return (
     <div className="auth-header">
-      <span className="auth-badge">HI</span>
+      {/* <span className="auth-badge">HI</span> */}
       <h2>{title}</h2>
       <p>{text}</p>
     </div>
@@ -144,16 +144,14 @@ function LoginCard({ onSwitch, onSubmit }) {
       />
 
       <form onSubmit={onSubmit}>
-        <label>
-          Email Address
+        <label>  
           <div className="field-control">
-            <span className="field-icon">@</span>
+            <span className="field-icon"></span>
             <input type="email" placeholder="Enter your email" required />
           </div>
         </label>
 
         <label>
-          Password
           <PasswordInput placeholder="Enter your password" />
         </label>
 
@@ -196,45 +194,36 @@ function RegisterCard({ onSwitch, onSubmit }) {
     <div className="auth-card register-card">
       <AuthHeader
         title="Create Account"
-        text="Begin your motherhood journey with personalized care and support."
+        text=""
       />
 
       <form onSubmit={onSubmit}>
         <div className="two-column">
           <label>
-            First Name
             <div className="field-control">
-              <span className="field-icon">fn</span>
               <input type="text" placeholder="First name" required />
             </div>
           </label>
           <label>
-            Last Name
             <div className="field-control">
-              <span className="field-icon">ln</span>
               <input type="text" placeholder="Last name" required />
             </div>
           </label>
         </div>
 
         <label>
-          Email Address
           <div className="field-control">
-            <span className="field-icon">@</span>
             <input type="email" placeholder="Enter your email" required />
           </div>
         </label>
 
         <label>
-          Phone Number
           <div className="field-control">
-            <span className="field-icon">bd</span>
             <input type="tel" placeholder="+880 1xxx-xxxxxx" />
           </div>
         </label>
 
         <label>
-          Password
           <PasswordInput
             placeholder="Create a strong password"
             value={password}
@@ -245,9 +234,7 @@ function RegisterCard({ onSwitch, onSubmit }) {
           </span>
           <small>{meta.label}</small>
         </label>
-
         <label>
-          Confirm Password
           <PasswordInput placeholder="Re-enter your password" />
         </label>
 
