@@ -396,6 +396,10 @@ small {
   font-weight: 700;
 }
 
+.error-message {
+  color: #c43a4f;
+}
+
 .toast {
   position: fixed;
   left: 50%;
