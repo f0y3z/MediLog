@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import healthImageOne from "../healthcare-1.jpg";
 import healthImageTwo from "../healthcare-2.png";
+import reportPreviewImage from "../rreport.webp";
 
 const slides = [healthImageOne, healthImageTwo];
 
 const navItems = [
-  { id: "timeline", label: "Page 3 Timeline" },
-  { id: "log-visit", label: "Page 4 Log Visit" },
-  { id: "visit-detail", label: "Page 5 Visit Detail" },
-  { id: "upload-report", label: "Page 6 Upload Lab Report" },
-  { id: "report-detail", label: "Page 7 Report Detail" },
-  { id: "log-symptom", label: "Page 8 Log Symptom" },
-  { id: "symptoms-history", label: "Page 9 Symptoms History" },
-  { id: "ai-suggestions", label: "Page 10 AI Suggestions" },
-  { id: "profile-settings", label: "Page 11 Profile & Settings" },
+  { id: "timeline", label: "Timeline" },
+  { id: "log-visit", label: "Log Visit" },
+  { id: "visit-detail", label: "Visit Detail" },
+  { id: "upload-report", label: "Upload Lab Report" },
+  { id: "report-detail", label: "Report Detail" },
+  { id: "vitals-log", label: "Vitals Check-in" },
+  { id: "vitals-report", label: "Vitals Report" },
+  { id: "log-symptom", label: "Log Symptom" },
+  { id: "symptoms-history", label: "Symptoms History" },
+  { id: "ai-suggestions", label: "AI Suggestions" },
+  { id: "profile-settings", label: "Profile & Settings" },
 ];
 
 const specializationOptions = ["GP", "Cardiologist", "Orthopedic", "Dermatologist", "Neurologist", "Other"];
@@ -58,7 +61,12 @@ function formatDateTime(value) {
 }
 
 function toTimelineSortValue(entry) {
-  return new Date(entry.dateTime || entry.date || entry.visitDate || entry.reportDate).getTime();
+  return new Date(entry.checkedAt || entry.dateTime || entry.date || entry.visitDate || entry.reportDate).getTime();
+}
+
+function average(values) {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function filePreviewFromFile(file) {
@@ -76,7 +84,7 @@ const initialVisits = [
   {
     id: "visit-1001",
     visitDate: "2026-07-02",
-    doctorName: "Dr. Nabila Rahman",
+    doctorName: "Dr. FOYEZ AHMED",
     clinic: "MediCare City Clinic",
     specialization: "Cardiologist",
     chiefComplaint: "Chest tightness after climbing stairs",
@@ -109,7 +117,7 @@ const initialReports = [
     processing: false,
     file: {
       name: "demo-report.pdf",
-      url: healthImageOne,
+      url: reportPreviewImage,
       kind: "image",
     },
     metrics: {
@@ -154,6 +162,25 @@ const initialSymptoms = [
   },
 ];
 
+const initialVitals = [
+  {
+    id: "vitals-1001",
+    checkedAt: "2026-07-04T08:30",
+    systolic: 124,
+    diastolic: 82,
+    heartRate: 76,
+    notes: "Morning check before breakfast.",
+  },
+  {
+    id: "vitals-1002",
+    checkedAt: "2026-07-03T20:10",
+    systolic: 128,
+    diastolic: 84,
+    heartRate: 80,
+    notes: "Evening check after a walk.",
+  },
+];
+
 const initialSuggestion = {
   id: "suggestion-1",
   generatedAt: "Today, 8:40 AM",
@@ -175,7 +202,7 @@ const initialSuggestion = {
 };
 
 const initialProfile = {
-  name: "Amina Rahman",
+  name: "DURJOY DIP",
   dob: "1994-08-21",
   gender: "Female",
   bloodGroup: "O+",
@@ -426,7 +453,7 @@ function RegisterCard({ onSwitch, onSubmit }) {
   );
 }
 
-function buildTimelineEntries(visits, reports, symptoms) {
+function buildTimelineEntries(visits, reports, symptoms, vitals) {
   const visitEntries = visits.map((visit) => ({
     id: visit.id,
     type: "Visit",
@@ -455,7 +482,16 @@ function buildTimelineEntries(visits, reports, symptoms) {
     severity: symptom.severity,
   }));
 
-  return [...visitEntries, ...reportEntries, ...symptomEntries].sort((left, right) => toTimelineSortValue(right) - toTimelineSortValue(left));
+  const vitalsEntries = vitals.map((vital) => ({
+    id: vital.id,
+    type: "Vitals",
+    date: vital.checkedAt,
+    title: `BP ${vital.systolic}/${vital.diastolic} mmHg`,
+    summary: `Heart rate ${vital.heartRate} bpm`,
+    detail: vital.notes || "Vitals check-in",
+  }));
+
+  return [...visitEntries, ...reportEntries, ...symptomEntries, ...vitalsEntries].sort((left, right) => toTimelineSortValue(right) - toTimelineSortValue(left));
 }
 
 function useToastState() {
@@ -471,11 +507,11 @@ function useToastState() {
   return [toast, setToast];
 }
 
-function DashboardHeader({ title, subtitle, onSignOut, pageNumber }) {
+function DashboardHeader({ title, subtitle, onSignOut }) {
   return (
     <header className="workspace-topbar">
       <div>
-        <span className="eyebrow">Page {pageNumber}</span>
+        <span className="eyebrow">MediLog Workspace</span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
@@ -484,12 +520,12 @@ function DashboardHeader({ title, subtitle, onSignOut, pageNumber }) {
   );
 }
 
-function TimelinePage({ visits, reports, symptoms, onOpenEntry, onSignOut }) {
+function TimelinePage({ visits, reports, symptoms, vitals, onOpenEntry, onSignOut }) {
   const [filterType, setFilterType] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const entries = useMemo(() => buildTimelineEntries(visits, reports, symptoms), [visits, reports, symptoms]);
+  const entries = useMemo(() => buildTimelineEntries(visits, reports, symptoms, vitals), [visits, reports, symptoms, vitals]);
 
   const filteredEntries = entries.filter((entry) => {
     if (filterType !== "All" && entry.type !== filterType) return false;
@@ -501,7 +537,6 @@ function TimelinePage({ visits, reports, symptoms, onOpenEntry, onSignOut }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={3}
         title="Timeline"
         subtitle="Chronological feed of every entry. Filter by type and date range, then open any card for the full detail view."
         onSignOut={() => onSignOut("login")}
@@ -510,7 +545,7 @@ function TimelinePage({ visits, reports, symptoms, onOpenEntry, onSignOut }) {
       <div className="workspace-card">
         <div className="page-toolbar">
           <div className="segmented-controls">
-            {['All', 'Visit', 'Report', 'Symptom'].map((item) => (
+            {["All", "Visit", "Report", "Symptom", "Vitals"].map((item) => (
               <button
                 key={item}
                 type="button"
@@ -576,7 +611,6 @@ function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisit, onDe
     return (
       <section className="workspace-page">
         <DashboardHeader
-          pageNumber={5}
           title="Visit Detail"
           subtitle="No doctor visit is available yet."
           onSignOut={() => onNavigate("login")}
@@ -620,7 +654,6 @@ function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisit, onDe
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={5}
         title="Visit Detail"
         subtitle="View one doctor visit with prescriptions, linked tests, the file viewer, and manual medication editing."
         onSignOut={() => onNavigate("login")}
@@ -659,7 +692,7 @@ function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisit, onDe
                 visit.prescriptionFile.kind === "pdf" ? (
                   <iframe title="Prescription PDF preview" src={visit.prescriptionFile.url} />
                 ) : (
-                  <img src={visit.prescriptionFile.url} alt={visit.prescriptionFile.name} />
+                  <img src="prescription.jpg" alt={visit.prescriptionFile.name} />
                 )
               ) : (
                 <div className="empty-state">No prescription file uploaded.</div>
@@ -806,7 +839,6 @@ function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={4}
         title="Log Doctor Visit"
         subtitle="Create a new DoctorVisit, attach a prescription file, and let the parser auto-populate medications and tests when available."
         onSignOut={() => onNavigate("login")}
@@ -871,7 +903,6 @@ function ReportDetailPage({ reports, visits, selectedReportId, onDeleteReport, o
     return (
       <section className="workspace-page">
         <DashboardHeader
-          pageNumber={7}
           title="Report Detail"
           subtitle="No lab report is available yet."
           onSignOut={() => onNavigate("login")}
@@ -891,7 +922,6 @@ function ReportDetailPage({ reports, visits, selectedReportId, onDeleteReport, o
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={7}
         title="Report Detail"
         subtitle="View the uploaded lab report, extracted metrics, linked visit, and AI summary."
         onSignOut={() => onNavigate("login")}
@@ -923,7 +953,7 @@ function ReportDetailPage({ reports, visits, selectedReportId, onDeleteReport, o
                 report.file.kind === "pdf" ? (
                   <iframe title="Report PDF preview" src={report.file.url} />
                 ) : (
-                  <img src={report.file.url} alt={report.file.name} />
+                  <img src={report.file.url || reportPreviewImage} alt={report.file.name || "Report preview"} />
                 )
               ) : (
                 <div className="empty-state">No report file uploaded.</div>
@@ -985,7 +1015,6 @@ function ReportFormPage({ visits, onCreateReport, onNavigate, setToast }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={6}
         title="Upload Lab Report"
         subtitle="Upload a new lab report, optionally link it to a visit, and let parsed metrics and summary populate after processing."
         onSignOut={() => onNavigate("login")}
@@ -1057,7 +1086,6 @@ function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={8}
         title="Log Symptom"
         subtitle="Use the quick symptom form to capture timing, severity, and optional notes."
         onSignOut={() => onNavigate("login")}
@@ -1160,7 +1188,6 @@ function SymptomsHistoryPage({ symptoms, onNavigate, setSelectedSymptomName }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={9}
         title="Symptoms History"
         subtitle="Track severity over time, filter by name and date, and review a trend chart when a symptom appears at least three times."
         onSignOut={() => onNavigate("login")}
@@ -1248,7 +1275,6 @@ function AISuggestionsPage({ suggestion, onRegenerate, onNavigate }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={10}
         title="AI Health Suggestions"
         subtitle="The latest health suggestion is split into diet, routine, dos, don'ts, and early warnings."
         onSignOut={() => onNavigate("login")}
@@ -1323,7 +1349,6 @@ function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast }) {
   return (
     <section className="workspace-page">
       <DashboardHeader
-        pageNumber={11}
         title="Profile & Settings"
         subtitle="View and edit your profile, change password, and leave space for future notification and export settings."
         onSignOut={() => onNavigate("login")}
@@ -1385,12 +1410,157 @@ function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast }) {
   );
 }
 
+function VitalsLogPage({ onCreateVital, onNavigate, setToast }) {
+  const [form, setForm] = useState({
+    checkedAt: currentDateTimeValue(),
+    systolic: "",
+    diastolic: "",
+    heartRate: "",
+    notes: "",
+  });
+
+  function submitVital(event) {
+    event.preventDefault();
+    onCreateVital({
+      ...form,
+      systolic: Number(form.systolic),
+      diastolic: Number(form.diastolic),
+      heartRate: Number(form.heartRate),
+    });
+    setToast("Vitals check saved");
+    setForm({
+      checkedAt: currentDateTimeValue(),
+      systolic: "",
+      diastolic: "",
+      heartRate: "",
+      notes: "",
+    });
+    onNavigate("vitals-report");
+  }
+
+  return (
+    <section className="workspace-page">
+      <DashboardHeader
+        title="Vitals Check-in"
+        subtitle="Log blood pressure and heart rate with the exact check time so each reading appears in your report history."
+        onSignOut={() => onNavigate("login")}
+      />
+
+      <form className="workspace-card form-card compact-form" onSubmit={submitVital}>
+        <div className="field-grid">
+          <label>
+            Check Date & Time
+            <input type="datetime-local" required value={form.checkedAt} onInput={(event) => setForm({ ...form, checkedAt: event.currentTarget.value })} />
+          </label>
+          <label>
+            Systolic (mmHg)
+            <input type="number" min="70" max="250" required value={form.systolic} onInput={(event) => setForm({ ...form, systolic: event.currentTarget.value })} />
+          </label>
+          <label>
+            Diastolic (mmHg)
+            <input type="number" min="40" max="150" required value={form.diastolic} onInput={(event) => setForm({ ...form, diastolic: event.currentTarget.value })} />
+          </label>
+          <label>
+            Heart Rate (bpm)
+            <input type="number" min="30" max="220" required value={form.heartRate} onInput={(event) => setForm({ ...form, heartRate: event.currentTarget.value })} />
+          </label>
+        </div>
+
+        <label>
+          Notes
+          <textarea rows="4" value={form.notes} onInput={(event) => setForm({ ...form, notes: event.currentTarget.value })} placeholder="Optional context like resting, after walk, before medication" />
+        </label>
+
+        <button className="primary-button" type="submit">Save vitals reading</button>
+      </form>
+    </section>
+  );
+}
+
+function VitalsReportPage({ vitals, onNavigate }) {
+  const sortedVitals = [...vitals].sort((left, right) => new Date(right.checkedAt).getTime() - new Date(left.checkedAt).getTime());
+  const latest = sortedVitals[0] || null;
+
+  const avgSystolic = Math.round(average(vitals.map((item) => item.systolic)));
+  const avgDiastolic = Math.round(average(vitals.map((item) => item.diastolic)));
+  const avgHeartRate = Math.round(average(vitals.map((item) => item.heartRate)));
+
+  return (
+    <section className="workspace-page">
+      <DashboardHeader
+        title="Vitals Report"
+        subtitle="Review when you checked blood pressure and heart rate, with latest values and simple averages."
+        onSignOut={() => onNavigate("login")}
+      />
+
+      <div className="detail-layout single-column">
+        <div className="workspace-card vitals-summary-grid">
+          <div className="metric-tile">
+            <strong>Latest BP</strong>
+            <span>{latest ? `${latest.systolic}/${latest.diastolic} mmHg` : "No data"}</span>
+          </div>
+          <div className="metric-tile">
+            <strong>Latest Heart Rate</strong>
+            <span>{latest ? `${latest.heartRate} bpm` : "No data"}</span>
+          </div>
+          <div className="metric-tile">
+            <strong>Average BP</strong>
+            <span>{vitals.length ? `${avgSystolic}/${avgDiastolic} mmHg` : "No data"}</span>
+          </div>
+          <div className="metric-tile">
+            <strong>Average Heart Rate</strong>
+            <span>{vitals.length ? `${avgHeartRate} bpm` : "No data"}</span>
+          </div>
+        </div>
+
+        <div className="workspace-card">
+          <div className="card-top-row">
+            <div>
+              <span className="eyebrow">Report Timeline</span>
+              <h2>Blood Pressure & Heart Rate Logs</h2>
+            </div>
+            <button type="button" className="ghost-button" onClick={() => onNavigate("vitals-log")}>Add new check</button>
+          </div>
+
+          {!sortedVitals.length ? (
+            <div className="empty-state">No vitals checks yet. Add your first blood pressure and heart rate reading.</div>
+          ) : (
+            <div className="table-wrap vitals-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Checked At</th>
+                    <th>Blood Pressure</th>
+                    <th>Heart Rate</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedVitals.map((item) => (
+                    <tr key={item.id}>
+                      <td>{formatDateTime(item.checkedAt)}</td>
+                      <td>{item.systolic}/{item.diastolic} mmHg</td>
+                      <td>{item.heartRate} bpm</td>
+                      <td>{item.notes || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function WorkspaceShell({ onSignOut }) {
   const [page, setPage] = useState("timeline");
   const [toast, setToast] = useToastState();
   const [visits, setVisits] = useState(initialVisits);
   const [reports, setReports] = useState(initialReports);
   const [symptoms, setSymptoms] = useState(initialSymptoms);
+  const [vitals, setVitals] = useState(initialVitals);
   const [suggestion, setSuggestion] = useState(initialSuggestion);
   const [profile, setProfile] = useState(initialProfile);
   const [selectedVisitId, setSelectedVisitId] = useState(initialVisits[0]?.id || "");
@@ -1428,6 +1598,11 @@ function WorkspaceShell({ onSignOut }) {
     if (entry.type === "Report") {
       setSelectedReportId(entry.id);
       setPage("report-detail");
+      return;
+    }
+
+    if (entry.type === "Vitals") {
+      setPage("vitals-report");
       return;
     }
 
@@ -1554,6 +1729,19 @@ function WorkspaceShell({ onSignOut }) {
     setSelectedSymptomName(symptom.name);
   }
 
+  function createVital(form) {
+    const vital = {
+      id: createId("vitals"),
+      checkedAt: form.checkedAt,
+      systolic: Number(form.systolic),
+      diastolic: Number(form.diastolic),
+      heartRate: Number(form.heartRate),
+      notes: form.notes,
+    };
+
+    setVitals((current) => [vital, ...current]);
+  }
+
   function regenerateSuggestion() {
     setSuggestion(buildSuggestion());
     setToast("AI suggestion regenerated");
@@ -1561,7 +1749,7 @@ function WorkspaceShell({ onSignOut }) {
 
   const activePage = (() => {
     if (page === "timeline") {
-      return <TimelinePage visits={visits} reports={reports} symptoms={symptoms} onOpenEntry={openEntry} onSignOut={navigateTo} />;
+      return <TimelinePage visits={visits} reports={reports} symptoms={symptoms} vitals={vitals} onOpenEntry={openEntry} onSignOut={navigateTo} />;
     }
 
     if (page === "log-visit") {
@@ -1578,6 +1766,14 @@ function WorkspaceShell({ onSignOut }) {
 
     if (page === "report-detail") {
       return <ReportDetailPage reports={reports} visits={visits} selectedReportId={selectedReportId} onDeleteReport={deleteReport} onNavigate={navigateTo} setToast={setToast} />;
+    }
+
+    if (page === "vitals-log") {
+      return <VitalsLogPage onCreateVital={createVital} onNavigate={navigateTo} setToast={setToast} />;
+    }
+
+    if (page === "vitals-report") {
+      return <VitalsReportPage vitals={vitals} onNavigate={navigateTo} />;
     }
 
     if (page === "log-symptom") {

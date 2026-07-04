@@ -1096,6 +1096,11 @@ small {
   background: #ffeecf;
 }
 
+.entry-type.type-vitals {
+  color: #1f6f67;
+  background: #ddf7f3;
+}
+
 .timeline-feed-card h3,
 .nested-card h3,
 .workspace-card h2 {
@@ -1239,6 +1244,16 @@ th {
 
 .metrics-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vitals-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vitals-table-wrap {
+  margin-top: 14px;
 }
 
 .metric-tile {
@@ -1431,7 +1446,8 @@ th {
   .suggestion-grid,
   .field-grid,
   .metrics-grid,
-  .add-row {
+  .add-row,
+  .vitals-summary-grid {
     grid-template-columns: 1fr;
   }
 
