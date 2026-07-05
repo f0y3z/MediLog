@@ -1,6 +1,8 @@
 import { useMemo, useState } from "preact/hooks";
 import { formatDate, toTimelineSortValue } from "./medilog-data.js";
+import DashboardHeader from "./dashboard/dashboard-header.jsx";
 
+// Combines visits, reports, symptoms, and vitals into one timeline feed.
 export function buildTimelineEntries(visits, reports, symptoms, vitals) {
   const visitEntries = visits.map((visit) => ({
     id: visit.id,
@@ -42,19 +44,7 @@ export function buildTimelineEntries(visits, reports, symptoms, vitals) {
   return [...visitEntries, ...reportEntries, ...symptomEntries, ...vitalsEntries].sort((left, right) => toTimelineSortValue(right) - toTimelineSortValue(left));
 }
 
-function DashboardHeader({ title, subtitle, onSignOut }) {
-  return (
-    <header className="workspace-topbar">
-      <div>
-        <span className="eyebrow">MediLog Workspace</span>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
-      <button className="ghost-button" type="button" onClick={onSignOut}>Sign out</button>
-    </header>
-  );
-}
-
+// Timeline page: filtering lives here, while opening a card is handled by dashboard.jsx.
 export function TimelinePage({ visits, reports, symptoms, vitals, onOpenEntry, onSignOut }) {
   const [filterType, setFilterType] = useState("All");
   const [startDate, setStartDate] = useState("");

@@ -6,6 +6,7 @@ import {
 } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
+// Vitals pages: add blood pressure checks and show the calculated report table.
 export function VitalsLogPage({ onCreateVital, onNavigate, setToast }) {
   const [form, setForm] = useState({
     checkedAt: currentDateTimeValue(),

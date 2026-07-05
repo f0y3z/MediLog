@@ -1,5 +1,6 @@
 import DashboardHeader from "./dashboard-header.jsx";
 
+// AI suggestions page: displays the generated guidance created by the dashboard shell.
 export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate }) {
   return (
     <section className="workspace-page">

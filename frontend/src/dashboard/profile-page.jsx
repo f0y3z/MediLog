@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { bloodGroups, genderOptions } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
+// Profile page: edits profile fields and keeps password form state local to this screen.
 export default function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast }) {
   const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
 

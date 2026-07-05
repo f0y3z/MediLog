@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 
+// Small reusable toast hook; messages disappear automatically after a short delay.
 export default function useToastState() {
   const [toast, setToast] = useState("");
 

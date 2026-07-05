@@ -1,3 +1,4 @@
+// Shared top header used by every dashboard page.
 export default function DashboardHeader({ title, subtitle, onSignOut }) {
   return (
     <header className="workspace-topbar">

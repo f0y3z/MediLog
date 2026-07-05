@@ -7,6 +7,7 @@ import {
 } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
+// Report pages: upload a lab report and review parsed metrics/summary later.
 export function ReportDetailPage({ reports, visits, selectedReportId, onDeleteReport, onNavigate, setToast }) {
   const report = reports.find((item) => item.id === selectedReportId) || reports[0] || null;
 

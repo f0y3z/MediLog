@@ -6,6 +6,7 @@ import {
 } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
+// Draws the simple symptom severity chart shown in Symptoms History.
 function TrendChart({ points }) {
   const width = 420;
   const height = 180;
@@ -34,6 +35,7 @@ function TrendChart({ points }) {
   );
 }
 
+// Symptom pages: log new symptoms and filter the saved history.
 export function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
   const [form, setForm] = useState({
     name: "",

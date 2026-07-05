@@ -8,6 +8,7 @@ import {
 } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
+// Visit pages: create visits and edit the selected visit/prescription details.
 export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisit, onDeleteVisit, onNavigate, setToast }) {
   const visit = visits.find((item) => item.id === selectedVisitId) || visits[0] || null;
   const [editorOpen, setEditorOpen] = useState(false);
