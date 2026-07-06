@@ -1,5 +1,6 @@
 import json
 from google import genai
+from google.genai import types
 from django.conf import settings
 from celery import shared_task
 from .models import LabReport
@@ -33,10 +34,14 @@ def process_lab_report(report_id):
         """
 
         # 3. Request Multi-Modal parsing using the 2.5 model
+        # FIX: Wrap the file bytes using types.Part.from_bytes
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=[
-                {'mime_type': mime_type, 'data': file_bytes},
+                types.Part.from_bytes(
+                    data=file_bytes,
+                    mime_type=mime_type,
+                ),
                 prompt
             ]
         )
