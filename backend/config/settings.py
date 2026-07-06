@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'users',
+    'labreports',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -120,3 +121,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.User'  # Custom user model
+
+
+# config/settings.py
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+# This forces dotenv to search your root folder for the .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
