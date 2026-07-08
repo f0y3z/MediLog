@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { apiRequest, deleteResource, mapReport, mapSymptom, mapVisit, patchJson, postForm, postJson } from "./api.js";
+import { apiRequest, deleteResource, mapReport, mapSymptom, mapVisit, patchJson, postForm, postJson, safeErrorMessage } from "./api.js";
 import { navItems } from "./medilog-data.js";
 import { TimelinePage } from "./timeline.jsx";
 import AISuggestionsPage from "./dashboard/ai-suggestions-page.jsx";
@@ -127,8 +127,8 @@ function WorkspaceShell({
 
   async function createReport(form) {
     const payload = new FormData();
-    payload.append("test_type", form.testType);
-    payload.append("report_date", form.reportDate);
+    if (form.testType) payload.append("test_type", form.testType);
+    if (form.reportDate) payload.append("report_date", form.reportDate);
     payload.append("notes", form.notes || "");
     payload.append("file", form.file);
     if (form.linkedVisitId) payload.append("visit", form.linkedVisitId);
@@ -163,9 +163,13 @@ function WorkspaceShell({
   }
 
   async function regenerateSuggestion() {
-    const analysis = await apiRequest("/intelligence/analyze/", { method: "POST" });
-    setSuggestion({ ...analysis, generatedAt: new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) });
-    setToast("AI analysis generated");
+    try {
+      const analysis = await apiRequest("/intelligence/analyze/", { method: "POST" });
+      setSuggestion({ ...analysis, generatedAt: new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) });
+      setToast("AI analysis generated");
+    } catch (error) {
+      setToast(safeErrorMessage(error, "Unable to generate analysis right now."));
+    }
   }
 
   // Page router: add new dashboard screens here after creating their component file.
@@ -235,7 +239,7 @@ function WorkspaceShell({
             <button
               type="button"
               key={item.id}
-              className={page === item.id ? "active" : ""}
+              className={(item.pages || [item.id]).includes(page) ? "active" : ""}
               onClick={() => navigateTo(item.id)}
             >
               {item.label}

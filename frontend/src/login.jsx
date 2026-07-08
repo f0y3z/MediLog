@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { login, register } from "./api.js";
+import { login, register, safeErrorMessage } from "./api.js";
 import { slides, strengthMeta } from "./medilog-data.js";
 
 function PasswordInput({ placeholder, value, onInput }) {
@@ -287,7 +287,7 @@ export default function LoginShell({ onAuthenticated, setToast }) {
       setToast?.("Signed in successfully");
       onAuthenticated();
     } catch (requestError) {
-      setError(requestError.message || "Unable to sign in");
+      setError(safeErrorMessage(requestError, "Unable to sign in."));
     } finally {
       setIsSubmitting(false);
     }
@@ -312,7 +312,7 @@ export default function LoginShell({ onAuthenticated, setToast }) {
       setToast?.("Account created successfully");
       onAuthenticated();
     } catch (requestError) {
-      setError(requestError.message || "Unable to create account");
+      setError(safeErrorMessage(requestError, "Unable to create account."));
     } finally {
       setIsSubmitting(false);
     }

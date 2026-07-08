@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { clearSession, fetchWorkspaceData, hasSession } from "./api.js";
+import { clearSession, fetchWorkspaceData, hasSession, safeErrorMessage } from "./api.js";
 import LoginShell from "./login.jsx";
 import WorkspaceShell from "./dashboard.jsx";
 import {
@@ -28,7 +28,12 @@ export default function MediLogApp() {
       setTimeline(data.timeline);
       if (data.profile) setProfile(data.profile);
     } catch (error) {
-      setLoadError(error.message || "Unable to load workspace data");
+      if (error.status === 401) {
+        clearSession();
+        setPage("login");
+        return;
+      }
+      setLoadError(safeErrorMessage(error, "Unable to load workspace data."));
     } finally {
       setIsLoading(false);
     }

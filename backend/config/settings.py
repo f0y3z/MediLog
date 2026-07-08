@@ -127,6 +127,15 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.User'  # Custom user model
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
 
 # config/settings.py
 import os

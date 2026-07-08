@@ -4,7 +4,6 @@ import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.conf import settings
 
@@ -13,19 +12,13 @@ from symptoms.models import SymptomLog
 from labreports.models import LabReport
 from clinical.models import DoctorVisit
 
-User = get_user_model()
 logger = logging.getLogger(__name__)
 
 class PatientTimelineView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # 1. Resolve active target user context
-        user = request.user if request.user.is_authenticated else User.objects.first()
-        
-        if not user:
-            print("\n[TIMELINE DEBUG] CRITICAL: No users found in database at all.")
-            return Response({"error": "No user context available. Please seed or log in."}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
         
         print(f"\n[TIMELINE DEBUG] Generating timeline feed for User: ID={user.id}, Email={user.email}")
         timeline_data = []
@@ -64,8 +57,8 @@ class PatientTimelineView(APIView):
                     'timestamp': report_timestamp,
                     'status': lr.status
                 })
-            except Exception as e:
-                print(f"[TIMELINE DEBUG] Failed compiling report ID {lr.id}: {str(e)}")
+            except Exception:
+                logger.exception("Failed compiling report ID %s", lr.id)
 
         # ==========================================
         # 4. Extract & Format Doctor Visits

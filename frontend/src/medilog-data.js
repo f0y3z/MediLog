@@ -1,19 +1,14 @@
-import healthImageOne from "../healthcare-1.jpg";
-import healthImageTwo from "../healthcare-2.png";
-import reportPreviewImage from "../rreport.webp";
+import heroCareRecords from "./assets/hero-care-records.png";
+import heroAiUpload from "./assets/hero-ai-upload.png";
 
-export const slides = [healthImageOne, healthImageTwo];
+export const slides = [heroCareRecords, heroAiUpload];
 
 export const navItems = [
-  { id: "timeline", label: "Timeline" },
-  { id: "log-visit", label: "Log Visit" },
-  { id: "visit-detail", label: "Visit Detail" },
-  { id: "upload-report", label: "Upload Lab Report" },
-  { id: "report-detail", label: "Report Detail" },
-  { id: "log-symptom", label: "Log Symptom" },
-  { id: "symptoms-history", label: "Symptoms History" },
-  { id: "ai-suggestions", label: "AI Suggestions" },
-  { id: "profile-settings", label: "Profile & Settings" },
+  { id: "timeline", label: "Timeline", pages: ["timeline"] },
+  { id: "log-visit", label: "Clinical", pages: ["log-visit", "visit-detail"] },
+  { id: "upload-report", label: "Reports", pages: ["upload-report", "report-detail"] },
+  { id: "symptoms-history", label: "Analyze", pages: ["log-symptom", "symptoms-history"] },
+  { id: "ai-suggestions", label: "Intelligence", pages: ["ai-suggestions"] },
 ];
 
 export const specializationOptions = ["GP", "Cardiologist", "Orthopedic", "Dermatologist", "Neurologist", "Other"];
@@ -150,7 +145,7 @@ export const initialVisits = [
     processing: false,
     prescriptionFile: {
       name: "demo-prescription.png",
-      url: healthImageTwo,
+      url: heroCareRecords,
       kind: "image",
     },
     medications: [
@@ -174,7 +169,7 @@ export const initialReports = [
     processing: false,
     file: {
       name: "demo-report.pdf",
-      url: reportPreviewImage,
+      url: heroAiUpload,
       kind: "image",
     },
     metrics: {

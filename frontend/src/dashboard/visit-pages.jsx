@@ -252,6 +252,16 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
       />
 
       <form className="workspace-card form-card" onSubmit={submitVisit}>
+        <label className="upload-first">
+          <span>Prescription File</span>
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            onChange={(event) => setForm({ ...form, prescriptionFile: event.currentTarget.files?.[0] || null })}
+          />
+          <small>{form.prescriptionFile ? form.prescriptionFile.name : "Upload a prescription first so MediLog can auto-fill medications and tests."}</small>
+        </label>
+
         <div className="field-grid">
           <label>
             Visit Date
@@ -276,15 +286,6 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
         <label>
           Chief Complaint
           <textarea rows="4" required value={form.chiefComplaint} onInput={(event) => setForm({ ...form, chiefComplaint: event.currentTarget.value })} placeholder="Why did you visit?" />
-        </label>
-
-        <label>
-          Prescription File
-          <input
-            type="file"
-            accept=".pdf,image/*"
-            onChange={(event) => setForm({ ...form, prescriptionFile: event.currentTarget.files?.[0] || null })}
-          />
         </label>
 
         <label>

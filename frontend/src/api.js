@@ -3,6 +3,14 @@ const API_ORIGIN = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : A
 const ACCESS_TOKEN_KEY = "medilog.access";
 const REFRESH_TOKEN_KEY = "medilog.refresh";
 
+class ApiRequestError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+  }
+}
+
 function endpoint(path) {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${normalized}`;
@@ -35,6 +43,15 @@ function errorMessage(data, fallback) {
   return Array.isArray(firstError) ? firstError[0] : firstError || fallback;
 }
 
+export function safeErrorMessage(error, fallback = "Something went wrong. Please try again.") {
+  const message = error?.message || "";
+  if (!message) return fallback;
+  if (/traceback|exception|fault|sqlite|database|integrity|celery|redis|gemini|api key|stack/i.test(message)) {
+    return fallback;
+  }
+  return message;
+}
+
 export function setSession(tokens) {
   if (tokens?.access) localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access);
   if (tokens?.refresh) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh);
@@ -63,7 +80,11 @@ export async function apiRequest(path, options = {}) {
   const data = await parseResponse(response).catch(() => null);
 
   if (!response.ok) {
-    throw new Error(errorMessage(data, "Request failed"));
+    if (response.status === 401) {
+      clearSession();
+      throw new ApiRequestError("Please sign in again.", response.status);
+    }
+    throw new ApiRequestError(errorMessage(data, "Request failed"), response.status);
   }
 
   return data;

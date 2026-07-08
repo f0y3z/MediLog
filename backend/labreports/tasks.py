@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 from django.conf import settings
 from celery import shared_task
+from django.utils.dateparse import parse_date
 from .models import LabReport
 
 @shared_task
@@ -24,10 +25,13 @@ def process_lab_report(report_id):
         You are an expert clinical processing AI assistant. Analyze the attached lab report document.
         Perform two actions:
         1. Extract all biological metrics, biomarkers, standard measurements, and structural interpretations found in the report into a single flat JSON object where keys are the lowercased clean test names, and values are strings containing the numerical results and units (e.g. {"hemoglobin": "11.2 g/dL", "wbc": "6800 /µL"}).
-        2. Generate a cohesive, plain-English summary sentence outlining the primary impression or biological trends noticed.
+        2. Detect the report test type and report date when visible.
+        3. Generate a cohesive, plain-English summary sentence outlining the primary impression or biological trends noticed.
 
         Your output must be single structured valid JSON markdown block match exactly this format:
         {
+          "test_type": "Blood Test | USG | X-Ray | ECG | MRI | Other",
+          "report_date": "YYYY-MM-DD or null",
           "metrics": {"key": "value"},
           "summary": "Plain English summary here"
         }
@@ -51,6 +55,15 @@ def process_lab_report(report_id):
         data = json.loads(clean_text)
         
         # 4. Populate and Commit Changes back to database
+        detected_test_type = data.get("test_type")
+        valid_test_types = {choice[0] for choice in LabReport.TEST_TYPE_CHOICES}
+        if detected_test_type in valid_test_types:
+            report.test_type = detected_test_type
+
+        detected_report_date = parse_date(str(data.get("report_date") or ""))
+        if detected_report_date:
+            report.report_date = detected_report_date
+
         report.metrics = data.get("metrics", {})
         report.summary = data.get("summary", "Extraction completed successfully.")
         report.status = 'PARSED'
@@ -58,6 +71,6 @@ def process_lab_report(report_id):
         
     except Exception as e:
         report.status = 'FAILED'
-        report.summary = f"Error processing document context: {str(e)}"
+        report.summary = "Unable to process this report automatically. You can still review the uploaded file."
         report.save()
         raise e

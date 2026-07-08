@@ -1,6 +1,5 @@
 import { useState } from "preact/hooks";
 import {
-  currentDateValue,
   formatDate,
   testTypeOptions,
 } from "../medilog-data.js";
@@ -101,8 +100,8 @@ export function ReportDetailPage({ reports, visits, selectedReportId, onDeleteRe
 
 export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast }) {
   const [form, setForm] = useState({
-    testType: "Blood Test",
-    reportDate: currentDateValue(),
+    testType: "",
+    reportDate: "",
     linkedVisitId: "",
     notes: "",
     file: null,
@@ -112,8 +111,8 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
     event.preventDefault();
     await onCreateReport(form);
     setForm({
-      testType: "Blood Test",
-      reportDate: currentDateValue(),
+      testType: "",
+      reportDate: "",
       linkedVisitId: "",
       notes: "",
       file: null,
@@ -129,16 +128,28 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
       />
 
       <form className="workspace-card form-card" onSubmit={submitReport}>
+        <label className="upload-first">
+          <span>Report File</span>
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            required
+            onChange={(event) => setForm({ ...form, file: event.currentTarget.files?.[0] || null })}
+          />
+          <small>{form.file ? form.file.name : "Upload the file first. MediLog can detect the report details automatically."}</small>
+        </label>
+
         <div className="field-grid">
           <label>
-            Test Type
+            Test Type (optional)
             <select value={form.testType} onChange={(event) => setForm({ ...form, testType: event.currentTarget.value })}>
+              <option value="">Auto-detect from file</option>
               {testTypeOptions.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </label>
           <label>
-            Report Date
-            <input type="date" required value={form.reportDate} onInput={(event) => setForm({ ...form, reportDate: event.currentTarget.value })} />
+            Report Date (optional)
+            <input type="date" value={form.reportDate} onInput={(event) => setForm({ ...form, reportDate: event.currentTarget.value })} />
           </label>
           <label>
             Link to Visit (optional)
@@ -150,23 +161,13 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
         </div>
 
         <label>
-          Report File
-          <input
-            type="file"
-            accept=".pdf,image/*"
-            required
-            onChange={(event) => setForm({ ...form, file: event.currentTarget.files?.[0] || null })}
-          />
-        </label>
-
-        <label>
           Notes
           <textarea rows="4" value={form.notes} onInput={(event) => setForm({ ...form, notes: event.currentTarget.value })} placeholder="Optional context" />
         </label>
 
         <div className="helper-card">
           <strong>Processing note</strong>
-          <p>Once the report is uploaded, MediLog surfaces a processing banner and fills the extracted metrics and summary after parsing finishes.</p>
+          <p>Once the report is uploaded, MediLog fills detected details, metrics, and summary after parsing finishes. You can still adjust the optional fields before upload.</p>
         </div>
 
         <button className="primary-button" type="submit">Upload report</button>
