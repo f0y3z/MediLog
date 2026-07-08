@@ -1,18 +1,21 @@
 from rest_framework import viewsets
+from django.contrib.auth import get_user_model
 from .models import LabReport
 from .serializers import LabReportSerializer
 from .tasks import process_lab_report
+
+User = get_user_model()
 
 class LabReportViewSet(viewsets.ModelViewSet):
     queryset = LabReport.objects.all()
     serializer_class = LabReportSerializer
 
     def perform_create(self, serializer):
-        # 1. Fallback to None if the request is anonymous
-        user = self.request.user if self.request.user.is_authenticated else None
+        # Match your other apps: fallback to User.objects.first() instead of None
+        user = self.request.user if self.request.user.is_authenticated else User.objects.first()
         
-        # 2. Save the database record
+        # Save the database record with the resolved user
         instance = serializer.save(user=user)
         
-        # 3. Offload the job immediately to Redis/Celery!
+        # Offload the job immediately to Redis/Celery!
         process_lab_report.delay(instance.id)
