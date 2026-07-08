@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions
 from .models import DoctorVisit
 from .serializers import DoctorVisitSerializer
-from celery import current_app
+from .tasks import process_prescription
 
 class DoctorVisitViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorVisitSerializer
@@ -14,4 +14,7 @@ class DoctorVisitViewSet(viewsets.ModelViewSet):
         visit = serializer.save(user=self.request.user)
         
         if visit.prescription_file:
-            current_app.send_task('clinical.tasks.process_prescription', args=[visit.id])
+            try:
+                process_prescription.delay(visit.id)
+            except Exception:
+                process_prescription(visit.id)

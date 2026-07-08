@@ -11,28 +11,22 @@ from symptoms.models import SymptomLog
 from labreports.models import LabReport
 from clinical.models import DoctorVisit
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", getattr(settings, "GEMINI_API_KEY", "")))
-
 class EarlyDetectionAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
+        api_key = os.environ.get("GEMINI_API_KEY", getattr(settings, "GEMINI_API_KEY", ""))
+        if not api_key:
+            return Response(
+                {"error": "AI analysis needs GEMINI_API_KEY in backend/.env."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         # Gather Timeline Datasets
         symptoms = SymptomLog.objects.filter(user=user).order_by('logged_at')
         reports = LabReport.objects.filter(user=user).order_by('report_date')
         visits = DoctorVisit.objects.filter(user=user).order_by('created_at')
-
-        if not symptoms.exists() and not reports.exists() and not visits.exists():
-            return Response({
-                "risk_level": "LOW",
-                "detected_correlations": [],
-                "early_warning_signs": [],
-                "biomarkers_of_concern": [],
-                "clinical_recommendations": ["Add visits, reports, or symptoms to generate a personalized analysis."],
-                "plain_summary": "No health records have been added yet, so there is not enough data for a personalized analysis."
-            }, status=status.HTTP_200_OK)
 
         # Build clean clinical context profile string
         history_context = f"Patient Profile Context:\n"
@@ -67,6 +61,7 @@ class EarlyDetectionAnalysisView(APIView):
         """
 
         try:
+            client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
                 contents=[system_prompt, history_context]
@@ -75,5 +70,5 @@ class EarlyDetectionAnalysisView(APIView):
             analysis_data = json.loads(response.text.strip())
             return Response(analysis_data, status=status.HTTP_200_OK)
             
-        except Exception:
-            return Response({"error": "Unable to generate analysis right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            return Response({"error": f"Analysis engine fault: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

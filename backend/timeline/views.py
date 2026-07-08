@@ -19,15 +19,12 @@ class PatientTimelineView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        
-        print(f"\n[TIMELINE DEBUG] Generating timeline feed for User: ID={user.id}, Email={user.email}")
         timeline_data = []
 
         # ==========================================
         # 2. Extract & Format Symptom Logs
         # ==========================================
         symptoms = SymptomLog.objects.filter(user=user)
-        print(f"[TIMELINE DEBUG] Found {symptoms.count()} Symptom records.")
         for s in symptoms:
             timeline_data.append({
                 'id': s.id,
@@ -42,7 +39,6 @@ class PatientTimelineView(APIView):
         # 3. Extract & Format Lab Reports 
         # ==========================================
         reports = LabReport.objects.filter(user=user)
-        print(f"[TIMELINE DEBUG] Found {reports.count()} LabReport records.")
         for lr in reports:
             try:
                 # Upgrading DateField cleanly to match standard tz-aware datetime objects
@@ -57,14 +53,13 @@ class PatientTimelineView(APIView):
                     'timestamp': report_timestamp,
                     'status': lr.status
                 })
-            except Exception:
-                logger.exception("Failed compiling report ID %s", lr.id)
+            except Exception as e:
+                logger.warning("Failed compiling report %s for timeline: %s", lr.id, e)
 
         # ==========================================
         # 4. Extract & Format Doctor Visits
         # ==========================================
         visits = DoctorVisit.objects.filter(user=user)
-        print(f"[TIMELINE DEBUG] Found {visits.count()} DoctorVisit records.")
         for v in visits:
             timeline_data.append({
                 'id': v.id,
@@ -79,6 +74,5 @@ class PatientTimelineView(APIView):
         # 5. Chronological Sort & Return
         # ==========================================
         timeline_data.sort(key=lambda x: x['timestamp'], reverse=True)
-        print(f"[TIMELINE DEBUG] Successfully sorted total payload of {len(timeline_data)} events.\n")
         
         return Response(timeline_data, status=status.HTTP_200_OK)

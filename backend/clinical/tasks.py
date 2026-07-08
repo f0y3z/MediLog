@@ -3,11 +3,8 @@ import os
 from celery import shared_task
 from django.conf import settings
 from google import genai
-from google.genai import types  # Import the type wrappers
+from google.genai import types
 from .models import DoctorVisit
-
-# Initialize the modern Google GenAI Client
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", getattr(settings, "GEMINI_API_KEY", "")))
 
 @shared_task(name='clinical.tasks.process_prescription')
 def process_prescription(visit_id):
@@ -15,6 +12,15 @@ def process_prescription(visit_id):
         visit = DoctorVisit.objects.get(id=visit_id)
         if not visit.prescription_file:
             return "No file uploaded"
+
+        api_key = os.environ.get("GEMINI_API_KEY", getattr(settings, "GEMINI_API_KEY", ""))
+        if not api_key:
+            visit.prescription_status = 'FAILED'
+            visit.doctor_notes = "Prescription uploaded successfully, but AI parsing needs GEMINI_API_KEY in backend/.env."
+            visit.save(update_fields=['prescription_status', 'doctor_notes'])
+            return f"Saved clinical visit {visit_id} without AI parsing"
+
+        client = genai.Client(api_key=api_key)
 
         # Read the raw file data safely from disk
         file_path = visit.prescription_file.path

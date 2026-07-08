@@ -40,4 +40,5 @@ class LabReport(models.Model):
         ordering = ['-report_date']
 
     def __str__(self):
-        return f"{self.test_type} - {self.report_date} ({self.user.email})"
+        owner = self.user.email if self.user else "unassigned"
+        return f"{self.test_type} - {self.report_date} ({owner})"

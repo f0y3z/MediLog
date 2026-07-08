@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.utils import timezone
 from .models import LabReport
 
 class LabReportSerializer(serializers.ModelSerializer):
@@ -12,19 +11,14 @@ class LabReportSerializer(serializers.ModelSerializer):
             'report_date', 'notes', 'metrics', 'summary', 
             'status', 'status_display', 'created_at'
         ]
-        read_only_fields = ['id', 'user', 'status', 'created_at']
-        extra_kwargs = {
-            'test_type': {'required': False, 'allow_blank': True},
-            'report_date': {'required': False},
-        }
+        read_only_fields = ['id', 'user', 'metrics', 'summary', 'status', 'status_display', 'created_at']
+
+    def validate_visit(self, visit):
+        request = self.context.get('request')
+        if visit and request and request.user.is_authenticated and visit.user_id != request.user.id:
+            raise serializers.ValidationError("Linked visit does not belong to the current user.")
+        return visit
 
     def validate(self, attrs):
-        request = self.context.get('request')
-        visit = attrs.get('visit')
-        if request and visit and visit.user_id != request.user.id:
-            raise serializers.ValidationError({'visit': 'Selected visit was not found.'})
-        if not attrs.get('test_type'):
-            attrs['test_type'] = 'Other'
-        if not attrs.get('report_date'):
-            attrs['report_date'] = timezone.localdate()
+        # Additional custom metrics validations can be written here if frontend submits raw strings
         return attrs

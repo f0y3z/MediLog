@@ -1,10 +1,39 @@
 import json
+
+from celery import shared_task
+from django.conf import settings
 from google import genai
 from google.genai import types
-from django.conf import settings
-from celery import shared_task
-from django.utils.dateparse import parse_date
+
 from .models import LabReport
+
+
+def _extract_json_object(raw_text):
+    text = (raw_text or "").strip()
+    if text.startswith("```json"):
+        text = text.removeprefix("```json").strip()
+    if text.startswith("```"):
+        text = text.removeprefix("```").strip()
+    if text.endswith("```"):
+        text = text.removesuffix("```").strip()
+
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        text = text[start:end + 1]
+    return json.loads(text)
+
+
+def _mime_type_for_file(file_name):
+    lowered = file_name.lower()
+    if lowered.endswith(".pdf"):
+        return "application/pdf"
+    if lowered.endswith(".png"):
+        return "image/png"
+    if lowered.endswith(".webp"):
+        return "image/webp"
+    return "image/jpeg"
+
 
 @shared_task
 def process_lab_report(report_id):
@@ -14,63 +43,52 @@ def process_lab_report(report_id):
         return f"LabReport {report_id} not found."
 
     try:
-        # 1. Initialize the modern GenAI Client
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
-        
-        # 2. Extract file bytes and type context
-        file_bytes = report.file.read()
-        mime_type = "application/pdf" if report.file.name.lower().endswith('.pdf') else "image/jpeg"
-        
-        prompt = """
-        You are an expert clinical processing AI assistant. Analyze the attached lab report document.
-        Perform two actions:
-        1. Extract all biological metrics, biomarkers, standard measurements, and structural interpretations found in the report into a single flat JSON object where keys are the lowercased clean test names, and values are strings containing the numerical results and units (e.g. {"hemoglobin": "11.2 g/dL", "wbc": "6800 /µL"}).
-        2. Detect the report test type and report date when visible.
-        3. Generate a cohesive, plain-English summary sentence outlining the primary impression or biological trends noticed.
+        if not settings.GEMINI_API_KEY:
+            report.status = "FAILED"
+            report.metrics = {}
+            report.summary = "Report uploaded successfully, but AI parsing needs GEMINI_API_KEY in backend/.env."
+            report.save(update_fields=["status", "metrics", "summary"])
+            return f"LabReport {report_id} saved without AI parsing."
 
-        Your output must be single structured valid JSON markdown block match exactly this format:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
+        with report.file.open("rb") as uploaded_file:
+            file_bytes = uploaded_file.read()
+
+        prompt = """
+        You are an expert clinical processing assistant. Analyze the attached lab report document.
+        Return only valid JSON with this exact shape:
         {
-          "test_type": "Blood Test | USG | X-Ray | ECG | MRI | Other",
-          "report_date": "YYYY-MM-DD or null",
           "metrics": {"key": "value"},
           "summary": "Plain English summary here"
         }
+
+        For metrics, extract biological measurements, biomarkers, and structural interpretations into
+        one flat object. Use lowercased clean test names as keys and result text with units as values,
+        for example {"hemoglobin": "11.2 g/dL", "wbc": "6800 /uL"}.
         """
 
-        # 3. Request Multi-Modal parsing using the 2.5 model
-        # FIX: Wrap the file bytes using types.Part.from_bytes
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(
                     data=file_bytes,
-                    mime_type=mime_type,
+                    mime_type=_mime_type_for_file(report.file.name),
                 ),
-                prompt
-            ]
+                prompt,
+            ],
         )
-        
-        # Clean markdown wrap elements if returned
-        clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-        data = json.loads(clean_text)
-        
-        # 4. Populate and Commit Changes back to database
-        detected_test_type = data.get("test_type")
-        valid_test_types = {choice[0] for choice in LabReport.TEST_TYPE_CHOICES}
-        if detected_test_type in valid_test_types:
-            report.test_type = detected_test_type
 
-        detected_report_date = parse_date(str(data.get("report_date") or ""))
-        if detected_report_date:
-            report.report_date = detected_report_date
-
+        data = _extract_json_object(response.text)
         report.metrics = data.get("metrics", {})
         report.summary = data.get("summary", "Extraction completed successfully.")
-        report.status = 'PARSED'
-        report.save()
-        
-    except Exception as e:
-        report.status = 'FAILED'
-        report.summary = "Unable to process this report automatically. You can still review the uploaded file."
-        report.save()
-        raise e
+        report.status = "PARSED"
+        report.save(update_fields=["metrics", "summary", "status"])
+        return f"LabReport {report_id} parsed successfully."
+
+    except Exception as exc:
+        report.status = "FAILED"
+        report.metrics = report.metrics or {}
+        report.summary = f"Report uploaded successfully, but parsing failed: {exc}"
+        report.save(update_fields=["status", "metrics", "summary"])
+        return f"Failed to parse LabReport {report_id}: {exc}"
