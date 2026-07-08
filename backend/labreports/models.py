@@ -21,7 +21,7 @@ class LabReport(models.Model):
 
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True)
     # Optional link to a doctor visit as noted in V1 spec (V2 will handle tight structural constraints)
-    visit = models.ForeignKey('users.DoctorVisit', on_delete=models.SET_NULL, null=True, blank=True, related_name='linked_lab_reports') 
+    visit = models.ForeignKey('clinical.DoctorVisit', on_delete=models.SET_NULL, null=True, blank=True, related_name='linked_lab_reports') 
     
     # Core Files & Meta
     file = models.FileField(upload_to='lab_reports/%Y/%m/%d/', help_text="Raw PDF or image file")

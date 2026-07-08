@@ -8,3 +8,7 @@ medilog_project/
     ├── diagnostics/            # Lab Reports, JSON Metrics
     ├── tracking/               # Symptom Logs
     └── intelligence/           # Gemini Integration, Celery Tasks, Health Suggestions
+
+
+
+celery -A config worker --loglevel=info

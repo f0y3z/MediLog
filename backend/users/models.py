@@ -35,16 +35,3 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
-# Append to the bottom of users/models.py
-
-class DoctorVisit(models.Model):
-    # Link it to the user who visited the doctor
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='visits')
-    doctor_name = models.CharField(max_length=150)
-    visit_date = models.DateField()
-    notes = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Visit to {self.doctor_name} on {self.visit_date}"
