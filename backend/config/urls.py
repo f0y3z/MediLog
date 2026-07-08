@@ -24,5 +24,5 @@ urlpatterns = [
     path('api/reports/', include('labreports.urls')),
     path('api/symptoms/', include('symptoms.urls')),
     path('api/timeline/', include('timeline.urls')),
-    # path('api/', include('intelligence.urls')),
+    path('api/', include('intelligence.urls')),
 ]
