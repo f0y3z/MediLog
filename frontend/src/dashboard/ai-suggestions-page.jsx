@@ -1,13 +1,9 @@
 import DashboardHeader from "./dashboard-header.jsx";
 
 // AI suggestions page: displays the generated guidance created by the dashboard shell.
-export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate, setToast }) {
+export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate }) {
   async function generate() {
-    try {
-      await onRegenerate();
-    } catch (error) {
-      setToast(error.message || "AI analysis failed");
-    }
+    await onRegenerate();
   }
 
   return (

@@ -7,7 +7,7 @@ export const navItems = [
   { id: "timeline", label: "Timeline", pages: ["timeline"] },
   { id: "log-visit", label: "Clinical", pages: ["log-visit", "visit-detail"] },
   { id: "upload-report", label: "Reports", pages: ["upload-report", "report-detail"] },
-  { id: "symptoms-history", label: "Analyze", pages: ["log-symptom", "symptoms-history"] },
+  { id: "log-symptom", label: "Symptoms", pages: ["log-symptom", "symptoms-history"] },
   { id: "ai-suggestions", label: "Intelligence", pages: ["ai-suggestions"] },
 ];
 

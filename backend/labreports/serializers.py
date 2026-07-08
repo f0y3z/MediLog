@@ -12,6 +12,10 @@ class LabReportSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'created_at'
         ]
         read_only_fields = ['id', 'user', 'metrics', 'summary', 'status', 'status_display', 'created_at']
+        extra_kwargs = {
+            'test_type': {'required': False, 'allow_blank': True, 'allow_null': True},
+            'report_date': {'required': False, 'allow_null': True},
+        }
 
     def validate_visit(self, visit):
         request = self.context.get('request')

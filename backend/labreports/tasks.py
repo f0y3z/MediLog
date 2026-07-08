@@ -1,7 +1,9 @@
 import json
+from datetime import datetime
 
 from celery import shared_task
 from django.conf import settings
+from django.utils.dateparse import parse_date
 from google import genai
 from google.genai import types
 
@@ -34,6 +36,36 @@ def _mime_type_for_file(file_name):
         return "image/webp"
     return "image/jpeg"
 
+def _normalize_test_type(value):
+    if not value:
+        return None
+    normalized = value.strip().lower()
+    if not normalized:
+        return None
+
+    valid_test_types = {
+        "blood test": "Blood Test",
+        "usg": "USG",
+        "x-ray": "X-Ray",
+        "xray": "X-Ray",
+        "ecg": "ECG",
+        "mri": "MRI",
+        "other": "Other",
+    }
+    return valid_test_types.get(normalized, "Other")
+
+def _normalize_report_date(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if hasattr(value, "isoformat"):
+        return value
+    raw = str(value).strip()
+    if not raw:
+        return None
+    return parse_date(raw)
+
 
 @shared_task
 def process_lab_report(report_id):
@@ -59,10 +91,14 @@ def process_lab_report(report_id):
         You are an expert clinical processing assistant. Analyze the attached lab report document.
         Return only valid JSON with this exact shape:
         {
+          "test_type": "Blood Test|USG|X-Ray|ECG|MRI|Other",
+          "report_date": "YYYY-MM-DD",
           "metrics": {"key": "value"},
           "summary": "Plain English summary here"
         }
 
+        test_type must be one of: Blood Test, USG, X-Ray, ECG, MRI, Other.
+        report_date should be the document report date when visible, otherwise empty string.
         For metrics, extract biological measurements, biomarkers, and structural interpretations into
         one flat object. Use lowercased clean test names as keys and result text with units as values,
         for example {"hemoglobin": "11.2 g/dL", "wbc": "6800 /uL"}.
@@ -80,10 +116,16 @@ def process_lab_report(report_id):
         )
 
         data = _extract_json_object(response.text)
+        parsed_test_type = _normalize_test_type(data.get("test_type"))
+        parsed_report_date = _normalize_report_date(data.get("report_date"))
         report.metrics = data.get("metrics", {})
         report.summary = data.get("summary", "Extraction completed successfully.")
+        if not report.test_type and parsed_test_type:
+            report.test_type = parsed_test_type
+        if not report.report_date and parsed_report_date:
+            report.report_date = parsed_report_date
         report.status = "PARSED"
-        report.save(update_fields=["metrics", "summary", "status"])
+        report.save(update_fields=["test_type", "report_date", "metrics", "summary", "status"])
         return f"LabReport {report_id} parsed successfully."
 
     except Exception as exc:

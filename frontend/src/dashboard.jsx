@@ -1,5 +1,5 @@
-import { useEffect, useState } from "preact/hooks";
-import { apiRequest, deleteResource, mapReport, mapSymptom, mapVisit, patchJson, postForm, postJson, safeErrorMessage } from "./api.js";
+import { useEffect, useRef, useState } from "preact/hooks";
+import { apiRequest, deleteResource, mapProfile, mapReport, mapSymptom, mapVisit, patchJson, postForm, postJson, safeErrorMessage } from "./api.js";
 import { navItems } from "./medilog-data.js";
 import { TimelinePage } from "./timeline.jsx";
 import AISuggestionsPage from "./dashboard/ai-suggestions-page.jsx";
@@ -34,6 +34,7 @@ function WorkspaceShell({
   const [selectedVisitId, setSelectedVisitId] = useState(visits[0]?.id || "");
   const [selectedReportId, setSelectedReportId] = useState(reports[0]?.id || "");
   const [selectedSymptomName, setSelectedSymptomName] = useState(symptoms[0]?.name || "");
+  const signOutTimerRef = useRef(null);
 
   useEffect(() => {
     if (!selectedVisitId && visits[0]) setSelectedVisitId(visits[0].id);
@@ -46,6 +47,12 @@ function WorkspaceShell({
   useEffect(() => {
     if (!selectedSymptomName && symptoms[0]) setSelectedSymptomName(symptoms[0].name);
   }, [symptoms, selectedSymptomName]);
+
+  useEffect(() => {
+    return () => {
+      if (signOutTimerRef.current) window.clearTimeout(signOutTimerRef.current);
+    };
+  }, []);
 
   // One navigation helper keeps page changes and selected records together.
   function navigateTo(nextPage, entityId) {
@@ -87,79 +94,125 @@ function WorkspaceShell({
     setPage("symptoms-history");
   }
 
-  async function createVisit(form) {
-    const payload = new FormData();
-    payload.append("doctor_name", form.doctorName);
-    payload.append("clinic_or_hospital", form.clinic);
-    payload.append("specialization", form.specialization);
-    payload.append("chief_complaint", form.chiefComplaint);
-    payload.append("doctor_notes", form.additionalNotes || "");
-    if (form.prescriptionFile) payload.append("prescription_file", form.prescriptionFile);
+  function handleSubmitError(error, fallbackMessage) {
+    if (error?.status === 401) {
+      setToast("Session expired. Please sign in again.");
+      if (signOutTimerRef.current) window.clearTimeout(signOutTimerRef.current);
+      signOutTimerRef.current = window.setTimeout(() => onSignOut(), 900);
+      return;
+    }
+    setToast(safeErrorMessage(error, fallbackMessage));
+  }
 
-    const created = mapVisit(await postForm("/visits/", payload));
-    setVisits((current) => [created, ...current]);
-    setSelectedVisitId(created.id);
-    setPage("visit-detail");
-    await onRefresh();
-    setToast("Doctor visit saved");
+  async function createVisit(form) {
+    try {
+      const payload = new FormData();
+      payload.append("doctor_name", form.doctorName);
+      payload.append("clinic_or_hospital", form.clinic);
+      payload.append("specialization", form.specialization);
+      payload.append("chief_complaint", form.chiefComplaint);
+      payload.append("doctor_notes", form.additionalNotes || "");
+      if (form.prescriptionFile) payload.append("prescription_file", form.prescriptionFile);
+
+      const created = mapVisit(await postForm("/visits/", payload));
+      setVisits((current) => [created, ...current]);
+      setSelectedVisitId(created.id);
+      setPage("visit-detail");
+      await onRefresh();
+      setToast("Doctor visit saved");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to save doctor visit.");
+      return false;
+    }
   }
 
   async function updateVisit(visitId, nextVisit) {
-    const updated = mapVisit(await patchJson(`/visits/${visitId}/`, {
-      doctor_name: nextVisit.doctorName,
-      clinic_or_hospital: nextVisit.clinic,
-      specialization: nextVisit.specialization,
-      chief_complaint: nextVisit.chiefComplaint,
-      doctor_notes: nextVisit.notes,
-    }));
-    setVisits((current) => current.map((item) => (item.id === visitId ? updated : item)));
-    setToast("Visit updated");
+    try {
+      const updated = mapVisit(await patchJson(`/visits/${visitId}/`, {
+        doctor_name: nextVisit.doctorName,
+        clinic_or_hospital: nextVisit.clinic,
+        specialization: nextVisit.specialization,
+        chief_complaint: nextVisit.chiefComplaint,
+        doctor_notes: nextVisit.notes,
+      }));
+      setVisits((current) => current.map((item) => (item.id === visitId ? updated : item)));
+      setToast("Visit updated");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to update visit.");
+      return false;
+    }
   }
 
   async function deleteVisit(visitId) {
-    await deleteResource(`/visits/${visitId}/`);
-    setVisits((current) => current.filter((item) => item.id !== visitId));
-    const nextVisit = visits.find((item) => item.id !== visitId);
-    setSelectedVisitId(nextVisit?.id || "");
-    await onRefresh();
-    setToast("Visit deleted");
+    try {
+      await deleteResource(`/visits/${visitId}/`);
+      setVisits((current) => current.filter((item) => item.id !== visitId));
+      const nextVisit = visits.find((item) => item.id !== visitId);
+      setSelectedVisitId(nextVisit?.id || "");
+      await onRefresh();
+      setToast("Visit deleted");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to delete visit.");
+      return false;
+    }
   }
 
   async function createReport(form) {
-    const payload = new FormData();
-    if (form.testType) payload.append("test_type", form.testType);
-    if (form.reportDate) payload.append("report_date", form.reportDate);
-    payload.append("notes", form.notes || "");
-    payload.append("file", form.file);
-    if (form.linkedVisitId) payload.append("visit", form.linkedVisitId);
+    try {
+      const payload = new FormData();
+      if (form.testType) payload.append("test_type", form.testType);
+      if (form.reportDate) payload.append("report_date", form.reportDate);
+      payload.append("notes", form.notes || "");
+      payload.append("file", form.file);
+      if (form.linkedVisitId) payload.append("visit", form.linkedVisitId);
 
-    const created = mapReport(await postForm("/reports/", payload));
-    setReports((current) => [created, ...current]);
-    setSelectedReportId(created.id);
-    setPage("report-detail");
-    await onRefresh();
-    setToast("Lab report uploaded");
+      const created = mapReport(await postForm("/reports/", payload));
+      setReports((current) => [created, ...current]);
+      setSelectedReportId(created.id);
+      setPage("report-detail");
+      await onRefresh();
+      setToast("Lab report uploaded");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to upload lab report.");
+      return false;
+    }
   }
 
   async function deleteReport(reportId) {
-    await deleteResource(`/reports/${reportId}/`);
-    setReports((current) => current.filter((item) => item.id !== reportId));
-    const nextReport = reports.find((item) => item.id !== reportId);
-    setSelectedReportId(nextReport?.id || "");
-    await onRefresh();
-    setToast("Report deleted");
+    try {
+      await deleteResource(`/reports/${reportId}/`);
+      setReports((current) => current.filter((item) => item.id !== reportId));
+      const nextReport = reports.find((item) => item.id !== reportId);
+      setSelectedReportId(nextReport?.id || "");
+      await onRefresh();
+      setToast("Report deleted");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to delete report.");
+      return false;
+    }
   }
 
   async function createSymptom(form) {
-    const symptom = mapSymptom(await postJson("/symptoms/", {
-      symptom_name: form.name,
-      severity: Number(form.severity),
-      notes: form.notes,
-    }));
-    setSymptoms((current) => [symptom, ...current]);
-    setSelectedSymptomName(symptom.name);
-    await onRefresh();
-    setToast("Symptom logged");
+    try {
+      const symptom = mapSymptom(await postJson("/symptoms/", {
+        symptom_name: form.name,
+        severity: Number(form.severity),
+        notes: form.notes,
+      }));
+      setSymptoms((current) => [symptom, ...current]);
+      setSelectedSymptomName(symptom.name);
+      await onRefresh();
+      setToast("Symptom logged");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to save symptom.");
+      return false;
+    }
   }
 
   async function regenerateSuggestion() {
@@ -167,8 +220,28 @@ function WorkspaceShell({
       const analysis = await apiRequest("/intelligence/analyze/", { method: "POST" });
       setSuggestion({ ...analysis, generatedAt: new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) });
       setToast("AI analysis generated");
+      return true;
     } catch (error) {
-      setToast(safeErrorMessage(error, "Unable to generate analysis right now."));
+      handleSubmitError(error, "Unable to generate analysis right now.");
+      return false;
+    }
+  }
+
+  async function saveProfile(nextProfile) {
+    try {
+      const updated = await patchJson("/auth/profile/", {
+        first_name: nextProfile.firstName,
+        last_name: nextProfile.lastName,
+        date_of_birth: nextProfile.dob || null,
+        gender: nextProfile.gender || null,
+        blood_group: nextProfile.bloodGroup || null,
+      });
+      setProfile(mapProfile(updated));
+      setToast("Profile updated");
+      return true;
+    } catch (error) {
+      handleSubmitError(error, "Unable to update profile.");
+      return false;
     }
   }
 
@@ -213,11 +286,11 @@ function WorkspaceShell({
     }
 
     if (page === "ai-suggestions") {
-      return <AISuggestionsPage suggestion={suggestion} onRegenerate={regenerateSuggestion} onNavigate={navigateTo} setToast={setToast} />;
+      return <AISuggestionsPage suggestion={suggestion} onRegenerate={regenerateSuggestion} onNavigate={navigateTo} />;
     }
 
     if (page === "profile-settings") {
-      return <ProfileSettingsPage profile={profile} setProfile={setProfile} onNavigate={navigateTo} setToast={setToast} />;
+      return <ProfileSettingsPage profile={profile} setProfile={setProfile} onNavigate={navigateTo} setToast={setToast} onSaveProfile={saveProfile} />;
     }
 
     return null;

@@ -46,7 +46,8 @@ export function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
 
   async function submitSymptom(event) {
     event.preventDefault();
-    await onCreateSymptom(form);
+    const created = await onCreateSymptom(form);
+    if (!created) return;
     setForm({ name: "", severity: 3, dateTime: currentDateTimeValue(), notes: "" });
     onNavigate("symptoms-history");
   }
@@ -87,7 +88,10 @@ export function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
           <textarea rows="4" value={form.notes} onInput={(event) => setForm({ ...form, notes: event.currentTarget.value })} placeholder="Optional" />
         </label>
 
-        <button className="primary-button" type="submit">Save symptom</button>
+        <div className="form-actions">
+          <button className="primary-button" type="submit">Save symptom</button>
+          <button type="button" className="ghost-button" onClick={() => onNavigate("symptoms-history")}>View history</button>
+        </div>
       </form>
     </section>
   );
@@ -117,6 +121,14 @@ export function SymptomsHistoryPage({ symptoms, onNavigate, setSelectedSymptomNa
 
       <div className="detail-layout single-column">
         <div className="workspace-card">
+          <div className="card-top-row">
+            <div>
+              <span className="eyebrow">Symptoms</span>
+              <h2>Logged symptoms</h2>
+            </div>
+            <button type="button" className="ghost-button" onClick={() => onNavigate("log-symptom")}>Log symptom</button>
+          </div>
+
           <div className="page-toolbar compact-toolbar">
             <label>
               Symptom name

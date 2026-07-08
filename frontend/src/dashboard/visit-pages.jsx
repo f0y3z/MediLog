@@ -37,7 +37,8 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
 
   async function saveVisit(event) {
     event.preventDefault();
-    await onUpdateVisit(visit.id, draft);
+    const saved = await onUpdateVisit(visit.id, draft);
+    if (!saved) return;
     setEditorOpen(false);
   }
 
@@ -59,7 +60,8 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
   }
 
   async function deleteVisit() {
-    await onDeleteVisit(visit.id);
+    const deleted = await onDeleteVisit(visit.id);
+    if (!deleted) return;
     onNavigate("timeline");
   }
 
@@ -223,7 +225,7 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
     visitDate: currentDateValue(),
     doctorName: "",
     clinic: "",
-    specialization: "GP",
+    specialization: "",
     chiefComplaint: "",
     additionalNotes: "",
     prescriptionFile: null,
@@ -231,12 +233,13 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
 
   async function submitVisit(event) {
     event.preventDefault();
-    await onCreateVisit(form);
+    const created = await onCreateVisit(form);
+    if (!created) return;
     setForm({
       visitDate: currentDateValue(),
       doctorName: "",
       clinic: "",
-      specialization: "GP",
+      specialization: "",
       chiefComplaint: "",
       additionalNotes: "",
       prescriptionFile: null,
@@ -247,7 +250,7 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
     <section className="workspace-page">
       <DashboardHeader
         title="Log Doctor Visit"
-        subtitle="Create a new DoctorVisit, attach a prescription file, and let the parser auto-populate medications and tests when available."
+        subtitle="All fields are optional. Upload a prescription file and MediLog can auto-fill visit details, medications, and tests in the background."
         onSignOut={() => onNavigate("login")}
       />
 
@@ -264,28 +267,29 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
 
         <div className="field-grid">
           <label>
-            Visit Date
-            <input type="date" required value={form.visitDate} onInput={(event) => setForm({ ...form, visitDate: event.currentTarget.value })} />
+            Visit Date (optional)
+            <input type="date" value={form.visitDate} onInput={(event) => setForm({ ...form, visitDate: event.currentTarget.value })} />
           </label>
           <label>
-            Doctor Name
-            <input type="text" required value={form.doctorName} onInput={(event) => setForm({ ...form, doctorName: event.currentTarget.value })} />
+            Doctor Name (optional)
+            <input type="text" value={form.doctorName} onInput={(event) => setForm({ ...form, doctorName: event.currentTarget.value })} placeholder="Auto-detect from prescription" />
           </label>
           <label>
-            Clinic / Hospital
-            <input type="text" required value={form.clinic} onInput={(event) => setForm({ ...form, clinic: event.currentTarget.value })} />
+            Clinic / Hospital (optional)
+            <input type="text" value={form.clinic} onInput={(event) => setForm({ ...form, clinic: event.currentTarget.value })} placeholder="Auto-detect from prescription" />
           </label>
           <label>
-            Specialization
+            Specialization (optional)
             <select value={form.specialization} onChange={(event) => setForm({ ...form, specialization: event.currentTarget.value })}>
+              <option value="">Auto-detect from prescription</option>
               {specializationOptions.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </label>
         </div>
 
         <label>
-          Chief Complaint
-          <textarea rows="4" required value={form.chiefComplaint} onInput={(event) => setForm({ ...form, chiefComplaint: event.currentTarget.value })} placeholder="Why did you visit?" />
+          Chief Complaint (optional)
+          <textarea rows="4" value={form.chiefComplaint} onInput={(event) => setForm({ ...form, chiefComplaint: event.currentTarget.value })} placeholder="Auto-detect from prescription or type manually" />
         </label>
 
         <label>

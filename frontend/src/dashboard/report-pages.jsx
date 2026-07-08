@@ -24,7 +24,8 @@ export function ReportDetailPage({ reports, visits, selectedReportId, onDeleteRe
   const linkedVisit = visits.find((visit) => visit.id === report.linkedVisitId) || null;
 
   async function deleteReport() {
-    await onDeleteReport(report.id);
+    const deleted = await onDeleteReport(report.id);
+    if (!deleted) return;
     onNavigate("timeline");
   }
 
@@ -51,7 +52,7 @@ export function ReportDetailPage({ reports, visits, selectedReportId, onDeleteRe
           <div className="detail-grid">
             <div className="summary-panel">
               <p><strong>Test Type:</strong> {report.testType}</p>
-              <p><strong>Report Date:</strong> {formatDate(report.reportDate)}</p>
+              <p><strong>Report Date:</strong> {report.reportDate ? formatDate(report.reportDate) : "Pending extraction"}</p>
               <p><strong>Linked Visit:</strong> {linkedVisit ? linkedVisit.doctorName : "No linked visit"}</p>
               <p><strong>Notes:</strong> {report.notes || "None"}</p>
             </div>
@@ -109,7 +110,8 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
 
   async function submitReport(event) {
     event.preventDefault();
-    await onCreateReport(form);
+    const created = await onCreateReport(form);
+    if (!created) return;
     setForm({
       testType: "",
       reportDate: "",

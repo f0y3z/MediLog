@@ -16,7 +16,7 @@ export function buildTimelineEntries(visits, reports, symptoms) {
   const reportEntries = reports.map((report) => ({
     id: report.id,
     type: "Report",
-    date: report.reportDate,
+    date: report.reportDate || report.createdAt,
     title: report.testType,
     summary: report.summary || "Lab report uploaded",
     detail: report.linkedVisitId ? "Linked to a visit" : "No visit link yet",

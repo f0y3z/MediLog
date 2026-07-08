@@ -1,23 +1,14 @@
 import { useState } from "preact/hooks";
-import { mapProfile, patchJson } from "../api.js";
 import { bloodGroups, genderOptions } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
 // Profile page: edits profile fields and keeps password form state local to this screen.
-export default function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast }) {
+export default function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast, onSaveProfile }) {
   const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
 
   async function saveProfile(event) {
     event.preventDefault();
-    const updated = await patchJson("/auth/profile/", {
-      first_name: profile.firstName,
-      last_name: profile.lastName,
-      date_of_birth: profile.dob || null,
-      gender: profile.gender || null,
-      blood_group: profile.bloodGroup || null,
-    });
-    setProfile(mapProfile(updated));
-    setToast("Profile updated");
+    await onSaveProfile(profile);
   }
 
   function savePassword(event) {

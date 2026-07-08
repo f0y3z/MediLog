@@ -1028,6 +1028,12 @@ small {
   gap: 8px;
 }
 
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .field-grid label span,
 .form-card label,
 .detail-side label {

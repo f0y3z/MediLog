@@ -25,8 +25,8 @@ class LabReport(models.Model):
     
     # Core Files & Meta
     file = models.FileField(upload_to='lab_reports/%Y/%m/%d/', help_text="Raw PDF or image file")
-    test_type = models.CharField(max_length=50, choices=TEST_TYPE_CHOICES)
-    report_date = models.DateField()
+    test_type = models.CharField(max_length=50, choices=TEST_TYPE_CHOICES, blank=True, null=True)
+    report_date = models.DateField(blank=True, null=True)
     notes = models.TextField(null=True, blank=True)
     
     # AI Extracted Fields
@@ -41,4 +41,4 @@ class LabReport(models.Model):
 
     def __str__(self):
         owner = self.user.email if self.user else "unassigned"
-        return f"{self.test_type} - {self.report_date} ({owner})"
+        return f"{self.test_type or 'Pending type'} - {self.report_date or 'Pending date'} ({owner})"

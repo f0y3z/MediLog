@@ -161,8 +161,9 @@ export function mapVisit(visit) {
 export function mapReport(report) {
   return {
     id: String(report.id),
-    testType: report.test_type,
-    reportDate: report.report_date,
+    testType: report.test_type || "Pending classification",
+    reportDate: report.report_date || null,
+    createdAt: report.created_at,
     linkedVisitId: report.visit ? String(report.visit) : null,
     notes: report.notes || "",
     status: report.status,
