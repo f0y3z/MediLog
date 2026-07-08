@@ -1,7 +1,15 @@
 import DashboardHeader from "./dashboard-header.jsx";
 
 // AI suggestions page: displays the generated guidance created by the dashboard shell.
-export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate }) {
+export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate, setToast }) {
+  async function generate() {
+    try {
+      await onRegenerate();
+    } catch (error) {
+      setToast(error.message || "AI analysis failed");
+    }
+  }
+
   return (
     <section className="workspace-page">
       <DashboardHeader
@@ -16,7 +24,7 @@ export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate
             <span className="eyebrow">Latest AI Analysis</span>
             <h2>Health Suggestion</h2>
           </div>
-          <button type="button" className="primary-button compact" onClick={onRegenerate}>Regenerate</button>
+          <button type="button" className="primary-button compact" onClick={generate}>Analyze</button>
         </div>
         <p className="timestamp-copy">Last generated: {suggestion ? suggestion.generatedAt : "No suggestion generated yet"}</p>
 
@@ -25,35 +33,25 @@ export default function AISuggestionsPage({ suggestion, onRegenerate, onNavigate
         ) : (
           <div className="suggestion-grid">
             <article>
-              <span className="eyebrow">Diet Plan</span>
-              <ul>
-                <li><strong>Recommended:</strong> {suggestion.dietPlan.recommendedFoods.join(", ")}</li>
-                <li><strong>Reduce:</strong> {suggestion.dietPlan.foodsToReduce.join(", ")}</li>
-                <li><strong>Meal timing:</strong> {suggestion.dietPlan.mealTimingTips.join(" ")}</li>
-              </ul>
+              <span className="eyebrow">Risk Level</span>
+              <h3>{suggestion.risk_level}</h3>
+              <p>{suggestion.plain_summary}</p>
             </article>
             <article>
-              <span className="eyebrow">Daily Routine</span>
-              <ul>
-                <li><strong>Morning:</strong> {suggestion.routine.morning.join(" · ")}</li>
-                <li><strong>Evening:</strong> {suggestion.routine.evening.join(" · ")}</li>
-              </ul>
+              <span className="eyebrow">Detected Correlations</span>
+              <ul>{(suggestion.detected_correlations || []).map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
             <article>
-              <span className="eyebrow">Dos</span>
-              <ul>{suggestion.dos.map((item) => <li key={item}>{item}</li>)}</ul>
-            </article>
-            <article>
-              <span className="eyebrow">Don'ts</span>
-              <ul>{suggestion.donts.map((item) => <li key={item}>{item}</li>)}</ul>
+              <span className="eyebrow">Biomarkers</span>
+              <ul>{(suggestion.biomarkers_of_concern || []).map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
             <article className="warning-panel">
               <span className="eyebrow">Early Warnings</span>
-              <ul>
-                {suggestion.warnings.map((warning) => (
-                  <li key={warning.text} className={warning.tone}>{warning.text}</li>
-                ))}
-              </ul>
+              <ul>{(suggestion.early_warning_signs || []).map((item) => <li key={item}>{item}</li>)}</ul>
+            </article>
+            <article>
+              <span className="eyebrow">Recommendations</span>
+              <ul>{(suggestion.clinical_recommendations || []).map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
           </div>
         )}

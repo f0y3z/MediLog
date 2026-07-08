@@ -11,7 +11,7 @@ function TrendChart({ points }) {
   const width = 420;
   const height = 180;
   const padding = 28;
-  const maxValue = 10;
+  const maxValue = 5;
   const minValue = 1;
   const usableWidth = width - padding * 2;
   const usableHeight = height - padding * 2;
@@ -39,16 +39,15 @@ function TrendChart({ points }) {
 export function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
   const [form, setForm] = useState({
     name: "",
-    severity: 5,
+    severity: 3,
     dateTime: currentDateTimeValue(),
     notes: "",
   });
 
-  function submitSymptom(event) {
+  async function submitSymptom(event) {
     event.preventDefault();
-    onCreateSymptom(form);
-    setToast("Symptom logged");
-    setForm({ name: "", severity: 5, dateTime: currentDateTimeValue(), notes: "" });
+    await onCreateSymptom(form);
+    setForm({ name: "", severity: 3, dateTime: currentDateTimeValue(), notes: "" });
     onNavigate("symptoms-history");
   }
 
@@ -75,12 +74,12 @@ export function LogSymptomPage({ onCreateSymptom, onNavigate, setToast }) {
 
         <label>
           Severity: {form.severity}
-          <input type="range" min="1" max="10" value={form.severity} onInput={(event) => setForm({ ...form, severity: Number(event.currentTarget.value) })} />
+          <input type="range" min="1" max="5" value={form.severity} onInput={(event) => setForm({ ...form, severity: Number(event.currentTarget.value) })} />
         </label>
 
         <label>
           Date & Time
-          <input type="datetime-local" value={form.dateTime} onInput={(event) => setForm({ ...form, dateTime: event.currentTarget.value })} />
+          <input type="datetime-local" value={form.dateTime} disabled />
         </label>
 
         <label>
@@ -141,7 +140,7 @@ export function SymptomsHistoryPage({ symptoms, onNavigate, setSelectedSymptomNa
                   <p>{symptom.notes || "No notes"}</p>
                 </div>
                 <div className="symptom-meta">
-                  <span className="severity-badge">{symptom.severity}/10</span>
+                  <span className="severity-badge">{symptom.severity}/5</span>
                   <time>{formatDateTime(symptom.dateTime)}</time>
                 </div>
               </button>
@@ -158,7 +157,7 @@ export function SymptomsHistoryPage({ symptoms, onNavigate, setSelectedSymptomNa
             <TrendChart points={trend.points} />
             <div className="trend-legend">
               {trend.points.map((point) => (
-                <span key={point.label}>{point.y}/10</span>
+                <span key={point.label}>{point.y}/5</span>
               ))}
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { postJson } from "./api.js";
+import { login, register } from "./api.js";
 import { slides, strengthMeta } from "./medilog-data.js";
 
 function PasswordInput({ placeholder, value, onInput }) {
@@ -157,7 +157,9 @@ function RegisterCard({ onSwitch, onSubmit, error, isSubmitting }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [bloodGroup, setBloodGroup] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState("");
@@ -172,7 +174,7 @@ function RegisterCard({ onSwitch, onSubmit, error, isSubmitting }) {
     }
 
     setLocalError("");
-    await onSubmit({ firstName, lastName, email, phone, password });
+    await onSubmit({ firstName, lastName, email, dateOfBirth, gender, bloodGroup, password, confirmPassword });
   }
 
   return (
@@ -202,9 +204,31 @@ function RegisterCard({ onSwitch, onSubmit, error, isSubmitting }) {
           </div>
         </label>
 
+        <div className="two-column">
+          <label>
+            <div className="field-control">
+              <input type="date" value={dateOfBirth} onInput={(event) => setDateOfBirth(event.currentTarget.value)} />
+            </div>
+          </label>
+          <label>
+            <div className="field-control">
+              <select value={gender} onChange={(event) => setGender(event.currentTarget.value)}>
+                <option value="">Gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+          </label>
+        </div>
+
         <label>
           <div className="field-control">
-            <input type="tel" placeholder="+880 1xxx-xxxxxx" value={phone} onInput={(event) => setPhone(event.currentTarget.value)} />
+            <select value={bloodGroup} onChange={(event) => setBloodGroup(event.currentTarget.value)}>
+              <option value="">Blood group</option>
+              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
           </div>
         </label>
 
@@ -259,7 +283,7 @@ export default function LoginShell({ onAuthenticated, setToast }) {
     setError("");
 
     try {
-      await postJson("/auth/login", payload);
+      await login(payload.email, payload.password);
       setToast?.("Signed in successfully");
       onAuthenticated();
     } catch (requestError) {
@@ -274,7 +298,17 @@ export default function LoginShell({ onAuthenticated, setToast }) {
     setError("");
 
     try {
-      await postJson("/auth/register", payload);
+      await register({
+        first_name: payload.firstName,
+        last_name: payload.lastName,
+        email: payload.email,
+        password: payload.password,
+        confirm_password: payload.confirmPassword,
+        date_of_birth: payload.dateOfBirth || null,
+        gender: payload.gender || null,
+        blood_group: payload.bloodGroup || null,
+      });
+      await login(payload.email, payload.password);
       setToast?.("Account created successfully");
       onAuthenticated();
     } catch (requestError) {

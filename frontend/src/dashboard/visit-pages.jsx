@@ -2,7 +2,6 @@ import { useEffect, useState } from "preact/hooks";
 import {
   createId,
   currentDateValue,
-  filePreviewFromFile,
   formatDate,
   specializationOptions,
 } from "../medilog-data.js";
@@ -36,11 +35,10 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
 
   const linkedReports = reports.filter((report) => report.linkedVisitId === visit.id);
 
-  function saveVisit(event) {
+  async function saveVisit(event) {
     event.preventDefault();
-    onUpdateVisit(visit.id, draft);
+    await onUpdateVisit(visit.id, draft);
     setEditorOpen(false);
-    setToast("Visit updated");
   }
 
   function updateMedication(id, field, value) {
@@ -60,10 +58,9 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
     setMedicationDraft({ name: "", dose: "", frequency: "", duration: "" });
   }
 
-  function deleteVisit() {
-    onDeleteVisit(visit.id);
+  async function deleteVisit() {
+    await onDeleteVisit(visit.id);
     onNavigate("timeline");
-    setToast("Visit deleted");
   }
 
   return (
@@ -137,17 +134,18 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
                 <tbody>
                   {(draft?.medications || []).map((medication) => (
                     <tr key={medication.id}>
-                      <td><input value={medication.name} onInput={(event) => updateMedication(medication.id, "name", event.currentTarget.value)} /></td>
-                      <td><input value={medication.dose} onInput={(event) => updateMedication(medication.id, "dose", event.currentTarget.value)} /></td>
-                      <td><input value={medication.frequency} onInput={(event) => updateMedication(medication.id, "frequency", event.currentTarget.value)} /></td>
-                      <td><input value={medication.duration} onInput={(event) => updateMedication(medication.id, "duration", event.currentTarget.value)} /></td>
+                      <td><input value={medication.name} onInput={(event) => updateMedication(medication.id, "name", event.currentTarget.value)} disabled /></td>
+                      <td><input value={medication.dose} onInput={(event) => updateMedication(medication.id, "dose", event.currentTarget.value)} disabled /></td>
+                      <td><input value={medication.frequency} onInput={(event) => updateMedication(medication.id, "frequency", event.currentTarget.value)} disabled /></td>
+                      <td><input value={medication.duration} onInput={(event) => updateMedication(medication.id, "duration", event.currentTarget.value)} disabled /></td>
                       <td>
                         <button
                           type="button"
                           className="text-button"
                           onClick={() => setDraft({ ...draft, medications: draft.medications.filter((item) => item.id !== medication.id) })}
+                          disabled
                         >
-                          Remove
+                          Parsed
                         </button>
                       </td>
                     </tr>
@@ -156,12 +154,12 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
               </table>
             </div>
 
-            <div className="add-row">
+            <div className="add-row disabled-row">
               <input placeholder="Medication name" value={medicationDraft.name} onInput={(event) => setMedicationDraft({ ...medicationDraft, name: event.currentTarget.value })} />
               <input placeholder="Dose" value={medicationDraft.dose} onInput={(event) => setMedicationDraft({ ...medicationDraft, dose: event.currentTarget.value })} />
               <input placeholder="Frequency" value={medicationDraft.frequency} onInput={(event) => setMedicationDraft({ ...medicationDraft, frequency: event.currentTarget.value })} />
               <input placeholder="Duration" value={medicationDraft.duration} onInput={(event) => setMedicationDraft({ ...medicationDraft, duration: event.currentTarget.value })} />
-              <button type="button" className="primary-button compact" onClick={addMedication}>Add medication</button>
+              <button type="button" className="primary-button compact" onClick={addMedication} disabled>Parsed only</button>
             </div>
           </div>
 
@@ -204,10 +202,6 @@ export function VisitDetailPage({ visits, reports, selectedVisitId, onUpdateVisi
               <textarea rows="4" value={draft.chiefComplaint} onInput={(event) => setDraft({ ...draft, chiefComplaint: event.currentTarget.value })} />
             </label>
             <label>
-              Diagnosis
-              <textarea rows="4" value={draft.diagnosis} onInput={(event) => setDraft({ ...draft, diagnosis: event.currentTarget.value })} />
-            </label>
-            <label>
               Additional Notes
               <textarea rows="4" value={draft.notes} onInput={(event) => setDraft({ ...draft, notes: event.currentTarget.value })} />
             </label>
@@ -235,10 +229,9 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
     prescriptionFile: null,
   });
 
-  function submitVisit(event) {
+  async function submitVisit(event) {
     event.preventDefault();
-    onCreateVisit(form);
-    setToast("Doctor visit saved");
+    await onCreateVisit(form);
     setForm({
       visitDate: currentDateValue(),
       doctorName: "",
@@ -248,7 +241,6 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
       additionalNotes: "",
       prescriptionFile: null,
     });
-    onNavigate("timeline");
   }
 
   return (
@@ -291,7 +283,7 @@ export function VisitFormPage({ onCreateVisit, onNavigate, setToast }) {
           <input
             type="file"
             accept=".pdf,image/*"
-            onChange={(event) => setForm({ ...form, prescriptionFile: filePreviewFromFile(event.currentTarget.files?.[0] || null) })}
+            onChange={(event) => setForm({ ...form, prescriptionFile: event.currentTarget.files?.[0] || null })}
           />
         </label>
 

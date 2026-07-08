@@ -1,7 +1,6 @@
 import { useState } from "preact/hooks";
 import {
   currentDateValue,
-  filePreviewFromFile,
   formatDate,
   testTypeOptions,
 } from "../medilog-data.js";
@@ -25,10 +24,9 @@ export function ReportDetailPage({ reports, visits, selectedReportId, onDeleteRe
 
   const linkedVisit = visits.find((visit) => visit.id === report.linkedVisitId) || null;
 
-  function deleteReport() {
-    onDeleteReport(report.id);
+  async function deleteReport() {
+    await onDeleteReport(report.id);
     onNavigate("timeline");
-    setToast("Report deleted");
   }
 
   return (
@@ -110,10 +108,9 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
     file: null,
   });
 
-  function submitReport(event) {
+  async function submitReport(event) {
     event.preventDefault();
-    onCreateReport(form);
-    setToast("Lab report uploaded");
+    await onCreateReport(form);
     setForm({
       testType: "Blood Test",
       reportDate: currentDateValue(),
@@ -121,7 +118,6 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
       notes: "",
       file: null,
     });
-    onNavigate("timeline");
   }
 
   return (
@@ -159,7 +155,7 @@ export function ReportFormPage({ visits, onCreateReport, onNavigate, setToast })
             type="file"
             accept=".pdf,image/*"
             required
-            onChange={(event) => setForm({ ...form, file: filePreviewFromFile(event.currentTarget.files?.[0] || null) })}
+            onChange={(event) => setForm({ ...form, file: event.currentTarget.files?.[0] || null })}
           />
         </label>
 

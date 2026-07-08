@@ -3,7 +3,7 @@ import { formatDate, toTimelineSortValue } from "./medilog-data.js";
 import DashboardHeader from "./dashboard/dashboard-header.jsx";
 
 // Combines visits, reports, symptoms, and vitals into one timeline feed.
-export function buildTimelineEntries(visits, reports, symptoms, vitals) {
+export function buildTimelineEntries(visits, reports, symptoms) {
   const visitEntries = visits.map((visit) => ({
     id: visit.id,
     type: "Visit",
@@ -32,25 +32,18 @@ export function buildTimelineEntries(visits, reports, symptoms, vitals) {
     severity: symptom.severity,
   }));
 
-  const vitalsEntries = vitals.map((vital) => ({
-    id: vital.id,
-    type: "Vitals",
-    date: vital.checkedAt,
-    title: `BP ${vital.systolic}/${vital.diastolic} mmHg`,
-    summary: `Heart rate ${vital.heartRate} bpm`,
-    detail: vital.notes || "Vitals check-in",
-  }));
-
-  return [...visitEntries, ...reportEntries, ...symptomEntries, ...vitalsEntries].sort((left, right) => toTimelineSortValue(right) - toTimelineSortValue(left));
+  return [...visitEntries, ...reportEntries, ...symptomEntries].sort((left, right) => toTimelineSortValue(right) - toTimelineSortValue(left));
 }
 
 // Timeline page: filtering lives here, while opening a card is handled by dashboard.jsx.
-export function TimelinePage({ visits, reports, symptoms, vitals, onOpenEntry, onSignOut }) {
+export function TimelinePage({ visits, reports, symptoms, timeline, onOpenEntry, onSignOut }) {
   const [filterType, setFilterType] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const entries = useMemo(() => buildTimelineEntries(visits, reports, symptoms, vitals), [visits, reports, symptoms, vitals]);
+  const entries = useMemo(() => {
+    return timeline?.length ? timeline : buildTimelineEntries(visits, reports, symptoms);
+  }, [visits, reports, symptoms, timeline]);
 
   const filteredEntries = entries.filter((entry) => {
     if (filterType !== "All" && entry.type !== filterType) return false;
@@ -70,7 +63,7 @@ export function TimelinePage({ visits, reports, symptoms, vitals, onOpenEntry, o
       <div className="workspace-card">
         <div className="page-toolbar">
           <div className="segmented-controls">
-            {["All", "Visit", "Report", "Symptom", "Vitals"].map((item) => (
+            {["All", "Visit", "Report", "Symptom"].map((item) => (
               <button
                 key={item}
                 type="button"

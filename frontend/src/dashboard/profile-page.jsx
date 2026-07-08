@@ -1,4 +1,5 @@
 import { useState } from "preact/hooks";
+import { mapProfile, patchJson } from "../api.js";
 import { bloodGroups, genderOptions } from "../medilog-data.js";
 import DashboardHeader from "./dashboard-header.jsx";
 
@@ -6,8 +7,16 @@ import DashboardHeader from "./dashboard-header.jsx";
 export default function ProfileSettingsPage({ profile, setProfile, onNavigate, setToast }) {
   const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
 
-  function saveProfile(event) {
+  async function saveProfile(event) {
     event.preventDefault();
+    const updated = await patchJson("/auth/profile/", {
+      first_name: profile.firstName,
+      last_name: profile.lastName,
+      date_of_birth: profile.dob || null,
+      gender: profile.gender || null,
+      blood_group: profile.bloodGroup || null,
+    });
+    setProfile(mapProfile(updated));
     setToast("Profile updated");
   }
 
@@ -30,8 +39,12 @@ export default function ProfileSettingsPage({ profile, setProfile, onNavigate, s
           <span className="eyebrow">Profile</span>
           <div className="field-grid">
             <label>
-              Name
-              <input type="text" value={profile.name} onInput={(event) => setProfile({ ...profile, name: event.currentTarget.value })} />
+              First Name
+              <input type="text" value={profile.firstName || ""} onInput={(event) => setProfile({ ...profile, firstName: event.currentTarget.value })} />
+            </label>
+            <label>
+              Last Name
+              <input type="text" value={profile.lastName || ""} onInput={(event) => setProfile({ ...profile, lastName: event.currentTarget.value })} />
             </label>
             <label>
               Date of Birth
@@ -55,6 +68,10 @@ export default function ProfileSettingsPage({ profile, setProfile, onNavigate, s
 
         <form className="workspace-card form-card" onSubmit={savePassword}>
           <span className="eyebrow">Change Password</span>
+          <div className="helper-card">
+            <strong>Not connected</strong>
+            <p>The backend currently exposes profile updates, but no password-change endpoint.</p>
+          </div>
           <div className="field-grid single-col">
             <label>
               Current Password
@@ -69,7 +86,7 @@ export default function ProfileSettingsPage({ profile, setProfile, onNavigate, s
               <input type="password" value={passwordForm.confirm} onInput={(event) => setPasswordForm({ ...passwordForm, confirm: event.currentTarget.value })} />
             </label>
           </div>
-          <button type="submit" className="primary-button compact">Update password</button>
+          <button type="submit" className="primary-button compact" disabled>Update password</button>
         </form>
 
         <div className="workspace-card helper-card future-card">

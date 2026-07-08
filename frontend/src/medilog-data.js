@@ -10,8 +10,6 @@ export const navItems = [
   { id: "visit-detail", label: "Visit Detail" },
   { id: "upload-report", label: "Upload Lab Report" },
   { id: "report-detail", label: "Report Detail" },
-  { id: "vitals-log", label: "Vitals Check-in" },
-  { id: "vitals-report", label: "Vitals Report" },
   { id: "log-symptom", label: "Log Symptom" },
   { id: "symptoms-history", label: "Symptoms History" },
   { id: "ai-suggestions", label: "AI Suggestions" },
@@ -261,8 +259,10 @@ export const initialSuggestion = {
 };
 
 export const initialProfile = {
-  name: "DURJOY DIP",
-  dob: "1994-08-21",
-  gender: "Female",
-  bloodGroup: "O+",
+  firstName: "",
+  lastName: "",
+  name: "",
+  dob: "",
+  gender: "",
+  bloodGroup: "",
 };
